@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<meta name="description" content="Объединяет HTML-файлы в один файл или части заданного размера — прямо в браузере, без загрузки на сервер.">
+<title>Сшиватель HTML</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%233574e6'/%3E%3Cstop offset='1' stop-color='%238f6bff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Ctext x='50' y='66' font-family='Arial,sans-serif' font-size='34' font-weight='700' fill='%23fff' text-anchor='middle'%3E%3C/%3E%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#0e1116">
+<meta property="og:title" content="Сшиватель HTML">
+<meta property="og:description" content="Объединяет HTML-файлы в один файл или части заданного размера — прямо в браузере, без загрузки на сервер.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary">
+<!-- og:image нужен только после размещения в интернете (обязателен абсолютный URL):
+<meta property="og:image" content="https://ваш-домен/cover.png">
+<meta property="og:image:alt" content="Скриншот Сшивателя HTML">
+-->
+<script>
+// применяем тему до первой отрисовки — чтобы не было вспышки неправильной темы
+(function(){
+  try{
+    var t = localStorage.getItem('stitcher-theme');
+    if (t !== 'light' && t !== 'dark'){
+      t = (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+    }
+    document.documentElement.dataset.theme = t;
+  }catch(e){}
+})();
+</script>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0e1116; --card:#161a22; --card2:#1c212c; --border:#272e3b;
+  --text:#e8ecf3; --muted:#949db1;
+  --accent:#2a5fc7; --accent2:#2350ab; --accent-soft:#8fb4ff;
+  --warn:#f5b942; --warn-text:#ffd98a; --warn-bg:rgba(245,185,66,.08); --warn-border:rgba(245,185,66,.35);
+  --danger:#ff6b6b; --scrollbar:#2c3442;
+  --grad-a:#3574e6; --grad-b:#8f6bff; --glow:rgba(53,116,230,.13);
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#eef1f6; --card:#ffffff; --card2:#f4f6fa; --border:#d9dfe9;
+  --text:#1c2430; --muted:#586278;
+  --accent:#2a62c4; --accent2:#1f4da3; --accent-soft:#1f4da3;
+  --warn:#b07f00; --warn-text:#6e4e00; --warn-bg:rgba(176,127,0,.08); --warn-border:rgba(176,127,0,.4);
+  --danger:#c92a2a; --scrollbar:#c4ccd9;
+  --grad-a:#2a62c4; --grad-b:#7b5ce0; --glow:rgba(53,116,230,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:radial-gradient(1200px 500px at 50% -10%, var(--glow), transparent 60%), var(--bg);
+  color:var(--text);
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  padding:36px 16px 60px;
+}
+.wrap{max-width:860px;margin:0 auto}
+.page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-badge{
+  width:44px;height:44px;border-radius:12px;flex:none;
+  background:linear-gradient(135deg,var(--grad-a),var(--grad-b));
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:800;color:#fff;
+}
+h1{font-size:26px;letter-spacing:-.02em}
+.sub{color:var(--muted);margin-bottom:26px}
+
+.top-controls{display:flex;gap:10px;align-items:center;flex:none}
+.lang-switch{display:flex;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
+.lang-switch button{
+  border:none;background:transparent;color:var(--muted);
+  padding:6px 13px;border-radius:7px;font:600 13px/1 inherit;
+  cursor:pointer;letter-spacing:.03em;
+}
+.lang-switch button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.theme-btn{
+  width:37px;height:37px;display:flex;align-items:center;justify-content:center;
+  background:var(--card2);border:1px solid var(--border);color:var(--muted);
+  border-radius:9px;cursor:pointer;transition:color .15s,border-color .15s;
+}
+.theme-btn:hover{color:var(--text);border-color:var(--accent)}
+.theme-btn svg{display:block}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:14px}
+
+.dropzone{
+  border:2px dashed var(--border);border-radius:12px;
+  padding:44px 20px;text-align:center;cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.dropzone:hover,.dropzone.drag{border-color:var(--accent);background:rgba(53,116,230,.07)}
+.dropzone .big{font-size:17px;font-weight:600;margin-bottom:6px}
+.dropzone .small{color:var(--muted);font-size:13px}
+
+/* прокручиваемые списки */
+.scroll-box{max-height:280px;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:var(--scrollbar) transparent}
+.scroll-box::-webkit-scrollbar{width:10px}
+.scroll-box::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:8px;border:2px solid var(--card)}
+.scroll-box::-webkit-scrollbar-track{background:transparent}
+
+/* виртуализованный список файлов: строки позиционируются абсолютно */
+#filesList{position:relative}
+.file-row{
+  position:absolute;left:0;right:0;height:42px;
+  display:flex;align-items:center;gap:10px;padding:0 12px;
+  border-radius:9px;background:var(--card2);
+  cursor:grab;user-select:none;touch-action:pan-y;
+}
+.file-row:active{cursor:grabbing}
+.file-row .num{color:var(--muted);font-size:12px;min-width:22px;text-align:right;font-variant-numeric:tabular-nums}
+.file-row .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-row .size{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.file-row .warn-ico{color:var(--warn);flex:none}
+.file-row .row-btns{display:flex;gap:2px;flex:none}
+.file-row.oversized{outline:1px solid var(--warn)}
+.file-row.drop-target{outline:2px dashed var(--accent);outline-offset:-2px}
+.file-row.dragging{opacity:.45}
+.order-hint{font-size:12px;color:var(--muted);margin-top:8px}
+.icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px 8px;border-radius:6px}
+.icon-btn:hover{color:var(--danger);background:rgba(255,107,107,.12)}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn:disabled:hover{color:var(--muted);background:none}
+.summary{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px;margin-top:10px;flex-wrap:wrap;gap:6px}
+.warn-text{color:var(--warn-text)}
+
+.field-label{
+  display:block;font-size:11px;color:var(--muted);margin-bottom:6px;
+  font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+}
+.field input,.field select{
+  width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:9px;padding:10px 12px;font-size:15px;outline:none;font-family:inherit;
+}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.size-input{display:flex;gap:8px}
+.size-input input{flex:1}
+.size-input select{width:auto;flex:none}
+.hint{font-size:12px;color:var(--muted);margin-top:5px}
+
+fieldset.mode-field{border:none;min-width:0;margin-bottom:16px}
+.mode-switch{display:flex;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
+.mode-switch input{
+  position:absolute;width:1px;height:1px;margin:-1px;
+  clip-path:inset(50%);overflow:hidden;white-space:nowrap;
+}
+.mode-switch label{
+  flex:1;text-align:center;padding:8px 12px;border-radius:7px;
+  cursor:pointer;color:var(--muted);font-weight:600;font-size:13.5px;user-select:none;
+}
+.mode-switch input:checked + label{background:var(--accent);color:#fff}
+.mode-switch input:focus-visible + label{outline:2px solid var(--accent-soft);outline-offset:2px}
+
+details.advanced{margin-top:14px;border-top:1px solid var(--border);padding-top:12px}
+details.advanced summary{
+  cursor:pointer;color:var(--muted);font-weight:600;font-size:13.5px;
+  list-style:none;display:flex;align-items:center;gap:7px;user-select:none;
+}
+details.advanced summary::-webkit-details-marker{display:none}
+details.advanced summary::before{content:'▸';display:inline-block;transition:transform .15s;color:var(--muted)}
+details.advanced[open] summary::before{transform:rotate(90deg)}
+details.advanced summary:hover{color:var(--text)}
+.advanced-body{margin-top:14px;display:grid;gap:14px}
+.checks{display:flex;flex-direction:column;gap:10px}
+.checks label{display:flex;gap:9px;align-items:flex-start;cursor:pointer;font-size:14px;color:var(--text)}
+.checks input{margin-top:3px;accent-color:var(--accent)}
+.checks .hint{margin:2px 0 0 23px}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--accent);color:#fff;border:none;border-radius:10px;
+  padding:13px 22px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;
+  transition:background .15s, transform .05s;
+}
+.btn:hover{background:var(--accent2)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-ghost{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--border)}
+.btn-block{width:100%}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:8px}
+
+/* прогресс + отмена */
+.progress-wrap{margin-top:12px}
+.progress-line{display:flex;align-items:center;gap:10px}
+.progress-track{flex:1;height:8px;border-radius:99px;background:var(--card2);border:1px solid var(--border);overflow:hidden}
+.progress-fill{height:100%;width:0%;background:var(--accent);border-radius:99px;transition:width .15s linear}
+.progress-text{
+  font-size:12.5px;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* результаты */
+.result-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;background:var(--card2);margin-bottom:8px}
+.result-row .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.result-row .meta{color:var(--muted);font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.result-row.oversized{outline:1px solid var(--warn)}
+.sha-chip{
+  font:600 11px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  color:var(--muted);background:var(--card2);border:1px solid var(--border);
+  border-radius:6px;padding:5px 7px;cursor:pointer;white-space:nowrap;font-family:inherit;
+}
+.sha-chip:hover{color:var(--text);border-color:var(--accent)}
+.warn-box{background:var(--warn-bg);border:1px solid var(--warn-border);color:var(--warn-text);padding:10px 14px;border-radius:9px;font-size:13px;margin-top:12px}
+.results-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.empty{color:var(--muted);font-size:14px;margin-top:12px}
+footer{color:var(--muted);font-size:12.5px;text-align:center;margin-top:26px;line-height:1.7}
+[hidden]{display:none !important}
+code{background:var(--card2);padding:1px 5px;border-radius:5px;font-size:.9em;color:var(--text)}
+
+/* тосты */
+.toasts{
+  position:fixed;right:16px;bottom:16px;z-index:1000;
+  display:flex;flex-direction:column;gap:8px;
+  max-width:min(380px,calc(100vw - 32px));pointer-events:none;
+}
+.toast{
+  pointer-events:auto;display:flex;align-items:flex-start;gap:10px;
+  background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);
+  border-radius:10px;padding:10px 12px;font-size:13.5px;
+  box-shadow:0 8px 28px rgba(0,0,0,.28);animation:toast-in .18s ease;
+}
+.toast span{flex:1;min-width:0;overflow-wrap:anywhere}
+.toast-success{border-left-color:#3fb96f}
+.toast-warn{border-left-color:var(--warn)}
+.toast-error{border-left-color:var(--danger)}
+.toast button{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:5px;font-size:12px}
+.toast button:hover{color:var(--text)}
+.toast.hide{opacity:0;transition:opacity .25s}
+@keyframes toast-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* доступность: видимый фокус с клавиатуры */
+:is(a,button,input,select,summary,[tabindex]):focus-visible{
+  outline:2px solid var(--accent-soft);outline-offset:2px;
+}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+@media(max-width:640px){
+  .page-head{flex-direction:column}
+  .top-controls{align-self:flex-start}
+  .result-row{flex-wrap:wrap}
+  .result-row .name{flex-basis:100%}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page-head">
+    <div class="logo">
+      <div class="logo-badge" aria-hidden="true">&lt;/&gt;</div>
+      <h1 data-i18n="title">Сшиватель HTML</h1>
+    </div>
+    <div class="top-controls">
+      <div class="lang-switch" role="group" data-i18n-aria="langLabel">
+        <button type="button" id="langRu" aria-pressed="true">RU</button>
+        <button type="button" id="langEn" aria-pressed="false">EN</button>
+      </div>
+      <button type="button" class="theme-btn" id="themeBtn">
+        <span id="iconMoon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span>
+        <span id="iconSun" aria-hidden="true" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>
+      </button>
+    </div>
+  </header>
+  <p class="sub" data-i18n="subtitle"></p>
+
+  <main>
+    <section class="card" aria-labelledby="filesTitle">
+      <h2 id="filesTitle" data-i18n="filesTitle"></h2>
+      <div class="dropzone" id="dropzone" role="button" tabindex="0">
+        <div class="big" data-i18n="dropBig"></div>
+        <div class="small" data-i18n="dropSmall"></div>
+      </div>
+      <input type="file" id="fileInput" multiple accept=".html,.htm,text/html" hidden>
+
+      <div id="filesCard" hidden style="margin-top:16px">
+        <div class="scroll-box" id="filesScroll"><div id="filesList" role="list"></div></div>
+        <p class="order-hint" data-i18n="orderHint"></p>
+        <div class="summary">
+          <span id="filesSummary"></span>
+          <button type="button" class="icon-btn" id="clearAllBtn" data-i18n="clearAll"></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="settingsTitle">
+      <h2 id="settingsTitle" data-i18n="settingsTitle"></h2>
+
+      <fieldset class="mode-field" id="modeField">
+        <legend class="field-label" data-i18n="modeLabel"></legend>
+        <div class="mode-switch">
+          <input type="radio" name="mode" id="modeOne" value="one">
+          <label for="modeOne" data-i18n="modeOne"></label>
+          <input type="radio" name="mode" id="modeParts" value="parts" checked>
+          <label for="modeParts" data-i18n="modeParts"></label>
+        </div>
+        <p class="hint" id="modeHint" aria-live="polite"></p>
+      </fieldset>
+
+      <div class="field" id="sizeField">
+        <label for="sizeValue" class="field-label" data-i18n="maxSizeLabel"></label>
+        <div class="size-input">
+          <input type="number" id="sizeValue" value="19" min="0" step="any">
+          <select id="sizeUnit" data-i18n-aria="unitAria">
+            <option value="mb" selected data-i18n="unitMB"></option>
+            <option value="kb" data-i18n="unitKB"></option>
+            <option value="b" data-i18n="unitB"></option>
+          </select>
+        </div>
+        <p class="hint" id="sizeHint" aria-live="polite"></p>
+      </div>
+
+      <details class="advanced">
+        <summary data-i18n="advanced"></summary>
+        <div class="advanced-body">
+          <div class="field">
+            <label for="prefixInput" class="field-label" data-i18n="prefixLabel"></label>
+            <input type="text" id="prefixInput" value="total" spellcheck="false">
+            <p class="hint" data-i18n-html="prefixHint"></p>
+          </div>
+          <div class="checks">
+            <label><input type="checkbox" id="sortChk" checked><span data-i18n="sortLabel"></span></label>
+            <label><input type="checkbox" id="excludeChk" checked><span data-i18n="excludeLabel"></span></label>
+            <p class="hint" data-i18n-html="excludeHint"></p>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="card" aria-labelledby="resultsTitle">
+      <h2 id="resultsTitle" data-i18n="resultsTitle"></h2>
+      <button type="button" class="btn btn-block" id="mergeBtn" disabled data-i18n="mergeBtn"></button>
+
+      <div class="progress-wrap" id="progressWrap" hidden>
+        <div class="progress-line">
+          <div class="progress-track" id="progressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-i18n-aria="progressAria">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="cancelBtn" data-i18n="cancel"></button>
+        </div>
+        <p class="progress-text" id="progressText"></p>
+      </div>
+
+      <div id="resultsCard" hidden style="margin-top:14px">
+        <div class="results-head">
+          <span id="resultsSummary" style="font-weight:600"></span>
+          <div class="btns">
+            <button type="button" class="btn btn-ghost btn-sm" id="downloadAllBtn" data-i18n="downloadSep"></button>
+            <button type="button" class="btn btn-sm" id="downloadZipBtn" data-i18n="downloadZip"></button>
+            <button type="button" class="btn btn-ghost btn-sm" id="shaManifestBtn" data-i18n="shaManifest" data-i18n-title="shaManifestTitle"></button>
+          </div>
+        </div>
+        <div class="scroll-box"><div id="resultsList" role="list"></div></div>
+        <div id="warningsBox"></div>
+        <p class="hint" id="zipInfo" hidden aria-live="polite"></p>
+        <p class="hint" style="margin-top:10px" data-i18n="dlHint"></p>
+      </div>
+      <p class="empty" id="emptyMsg" data-i18n="empty"></p>
+    </section>
+  </main>
+
+  <footer>
+    <span data-i18n="footer1"></span><br>
+    <span data-i18n="footer2"></span>
+  </footer>
+</div>
+
+<div class="toasts" id="toastsBox" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+
+// ==================== ИНТЕРНАЦИОНАЛИЗАЦИЯ ====================
+const I18N = {
+ru: {
+  docTitle: 'Сшиватель HTML — объединение файлов с лимитом размера',
+  title: 'Сшиватель HTML',
+  subtitle: 'Объединяет HTML-файлы в один файл или части заданного размера — прямо в браузере, без загрузки на сервер.',
+  langLabel: 'Язык интерфейса',
+  langRu: 'Русский', langEn: 'Английский',
+  themeToLight: 'Включить светлую тему',
+  themeToDark: 'Включить тёмную тему',
+  filesTitle: '1 · Файлы',
+  dropBig: 'Перетащите HTML-файлы сюда',
+  dropSmall: 'или нажмите, чтобы выбрать · можно сразу несколько',
+  clearAll: 'Очистить список',
+  settingsTitle: '2 · Настройки',
+  modeLabel: 'Режим сшивания',
+  modeOne: 'Один файл',
+  modeParts: 'Частями по размеру',
+  modeOneHint: 'Все файлы будут объединены в один итоговый файл без ограничения размера.',
+  modePartsHint: 'Файлы будут объединены в несколько частей, каждая — не больше заданного размера.',
+  maxSizeLabel: 'Максимальный размер одной части',
+  bytesHint: '= {n} байт',
+  invalidSize: 'Некорректное значение',
+  advanced: 'Дополнительные настройки',
+  prefixLabel: 'Префикс итоговых файлов',
+  prefixHint: 'Например: <code>total</code> → <code>total_1.html</code>, <code>total_2.html</code>… Если частей будет 10 и больше, нумерация автоматически пойдёт с ведущими нулями: <code>total_01.html</code>, <code>total_02.html</code>… — чтобы файлы шли по порядку.',
+  sortLabel: 'Сортировать файлы по имени',
+  excludeLabel: 'Пропускать файлы прошлых сшиваний',
+  excludeHint: 'Не включать в результат файлы, чьё имя начинается с префикса (например, <code>total_1.html</code>). Нужно, чтобы при повторной обработке той же папки не склеить уже склеенные файлы.',
+  orderHint: 'Порядок файлов можно менять перетаскиванием строк или кнопками ↑ ↓',
+  resultsTitle: '3 · Результат',
+  mergeBtn: 'Сшить файлы',
+  cancel: 'Отменить',
+  cancelled: 'Операция отменена',
+  progressAria: 'Прогресс операции',
+  phaseMerge: 'Сшивание',
+  phaseZip: 'Упаковка архива',
+  progressText: '{phase}: {pct}% · {done} из {total}',
+  downloadSep: 'По отдельности',
+  downloadZip: 'Один ZIP',
+  shaManifest: 'SHA-256',
+  shaManifestTitle: 'Скачать файл контрольных сумм (совместим с sha256sum -c)',
+  downloadBtn: 'Скачать',
+  previewBtn: 'Открыть',
+  previewAria: 'Открыть {name} в новой вкладке',
+  copySha: 'Скопировать SHA-256 файла {name}',
+  copied: 'Скопировано в буфер обмена',
+  copyFail: 'Не удалось скопировать',
+  shaUnavailable: 'Контрольные суммы недоступны в этом браузере',
+  removeFile: 'Убрать файл из списка',
+  moveUp: 'Переместить выше',
+  moveDown: 'Переместить ниже',
+  sortOffByDrag: 'Сортировка по имени отключена: порядок теперь задаётся вручную',
+  empty: 'Добавьте файлы и нажмите «Сшить».',
+  doneToast: 'Готово!',
+  filesSummary: 'Файлов: {n} · {size}',
+  filesSummaryParts: 'Файлов: {n} · {size} · частей: {p}',
+  filesTooBig: '⚠ {n} больше лимита',
+  fileTooBig: 'Файл больше лимита части: он не будет разрезан, а попадёт в отдельную часть целиком',
+  resultsSummary: 'Частей: {n} · файлов: {m} · {size}',
+  rowMeta: '{size} · файлов: {count}',
+  warnOversized: '⚠ {n} из {total} частей больше лимита: в них попал одиночный файл крупнее максимума. Такие файлы не режутся, а кладутся целиком.',
+  zipLine: 'Архив {name}: {size}.',
+  zipSaved: 'Исходно {size} — на {pct}% меньше.',
+  zipStored: 'Данные не сжались, хранятся как есть.',
+  dlHint: '«Открыть» показывает итог в новой вкладке ещё до скачивания. «По отдельности» скачивает части подряд — подтвердите разрешение браузера. «Один ZIP» отдаёт всё одним архивом.',
+  invalidSizeAlert: 'Укажите корректный максимальный размер части.',
+  tooBigZip: 'Слишком много данных для классического ZIP (лимит ~4 ГБ). Скачайте части по отдельности.',
+  zipError: 'Не удалось собрать ZIP: ',
+  workerError: 'Ошибка обработки: ',
+  popupBlocked: 'Браузер заблокировал открытие новой вкладки. Разрешите всплывающие окна для этого сайта.',
+  closeToast: 'Закрыть уведомление',
+  unitAria: 'Единица измерения',
+  unitMB: 'МБ', unitKB: 'КБ', unitB: 'байт',
+  footer1: 'Файлы обрабатываются локально в браузере и никуда не загружаются.',
+  footer2: 'Содержимое итоговых файлов побайтово совпадает с исходными.',
+},
+en: {
+  docTitle: 'HTML Stitcher — merge files with a size limit',
+  title: 'HTML Stitcher',
+  subtitle: 'Merges HTML files into one file or parts of a given size — right in your browser, nothing is uploaded.',
+  langLabel: 'Interface language',
+  langRu: 'Russian', langEn: 'English',
+  themeToLight: 'Switch to light theme',
+  themeToDark: 'Switch to dark theme',
+  filesTitle: '1 · Files',
+  dropBig: 'Drop HTML files here',
+  dropSmall: 'or click to choose · multiple files supported',
+  clearAll: 'Clear list',
+  settingsTitle: '2 · Settings',
+  modeLabel: 'Merge mode',
+  modeOne: 'Single file',
+  modeParts: 'Parts by size',
+  modeOneHint: 'All files will be combined into a single output file with no size limit.',
+  modePartsHint: 'Files will be merged into several parts, each no larger than the set size.',
+  maxSizeLabel: 'Maximum size of one part',
+  bytesHint: '= {n} bytes',
+  invalidSize: 'Invalid value',
+  advanced: 'Advanced settings',
+  prefixLabel: 'Output file prefix',
+  prefixHint: 'E.g. <code>total</code> → <code>total_1.html</code>, <code>total_2.html</code>… With 10+ parts, numbering automatically gets leading zeros: <code>total_01.html</code>, <code>total_02.html</code>… — so files stay in order.',
+  sortLabel: 'Sort files by name',
+  excludeLabel: 'Skip files from previous runs',
+  excludeHint: 'Don’t include files whose names start with the prefix (e.g. <code>total_1.html</code>). Prevents re-merging previously stitched files when you process the same folder again.',
+  orderHint: 'Reorder files by dragging rows or using the ↑ ↓ buttons',
+  resultsTitle: '3 · Result',
+  mergeBtn: 'Stitch files',
+  cancel: 'Cancel',
+  cancelled: 'Operation cancelled',
+  progressAria: 'Operation progress',
+  phaseMerge: 'Stitching',
+  phaseZip: 'Packing archive',
+  progressText: '{phase}: {pct}% · {done} of {total}',
+  downloadSep: 'Separately',
+  downloadZip: 'Single ZIP',
+  shaManifest: 'SHA-256',
+  shaManifestTitle: 'Download a checksum file (compatible with sha256sum -c)',
+  downloadBtn: 'Download',
+  previewBtn: 'Open',
+  previewAria: 'Open {name} in a new tab',
+  copySha: 'Copy SHA-256 of {name}',
+  copied: 'Copied to clipboard',
+  copyFail: 'Copy failed',
+  shaUnavailable: 'Checksums are unavailable in this browser',
+  removeFile: 'Remove file from list',
+  moveUp: 'Move up',
+  moveDown: 'Move down',
+  sortOffByDrag: 'Sorting by name disabled: the order is now manual',
+  empty: 'Add files and press “Stitch”.',
+  doneToast: 'Done!',
+  filesSummary: 'Files: {n} · {size}',
+  filesSummaryParts: 'Files: {n} · {size} · parts: {p}',
+  filesTooBig: '⚠ {n} over the limit',
+  fileTooBig: 'File exceeds the part limit: it won’t be split, it goes into its own part whole',
+  resultsSummary: 'Parts: {n} · files: {m} · {size}',
+  rowMeta: '{size} · files: {count}',
+  warnOversized: '⚠ {n} of {total} parts exceed the limit: they contain a single file larger than the maximum. Such files are not split — they are stored whole.',
+  zipLine: 'Archive {name}: {size}.',
+  zipSaved: 'Uncompressed {size} — {pct}% smaller.',
+  zipStored: 'Data did not compress; stored as is.',
+  dlHint: '“Open” shows the result in a new tab before downloading. “Separately” downloads parts one by one — allow multiple downloads if asked. “Single ZIP” gives you one archive.',
+  invalidSizeAlert: 'Enter a valid maximum part size.',
+  tooBigZip: 'Too much data for a classic ZIP (~4 GB limit). Download the parts separately.',
+  zipError: 'Failed to build ZIP: ',
+  workerError: 'Processing error: ',
+  popupBlocked: 'The browser blocked opening a new tab. Allow pop-ups for this site.',
+  closeToast: 'Dismiss notification',
+  unitAria: 'Unit of measure',
+  unitMB: 'MB', unitKB: 'KB', unitB: 'bytes',
+  footer1: 'Files are processed locally in your browser and never uploaded.',
+  footer2: 'Output contents match the source files byte for byte.',
+}};
+
+const t = (key, params) => {
+  let s = (I18N[LANG] && I18N[LANG][key]) || key;
+  if (params) s = s.replace(/\{(\w+)\}/g, (m, k) => params[k] !== undefined ? params[k] : m);
+  return s;
+};
+
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch {} }
+};
+let LANG = store.get('stitcher-lang') || (navigator.language && navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en');
+
+// ==================== СОСТОЯНИЕ ====================
+let selectedFiles = [];   // File[]
+let results = [];         // {name, buffer, size, count, oversized, sha}
+let busy = false;         // идёт сшивание или упаковка
+let dragFrom = null;      // индекс перетаскиваемой строки (null = внешний drag)
+let worker = null, workerUrl = null;
+let runMode = 'parts', runMax = 0;
+let previewUrls = [];
+
+// ==================== DOM ====================
+const $ = id => document.getElementById(id);
+const langRu = $('langRu'), langEn = $('langEn');
+const themeBtn = $('themeBtn'), iconSun = $('iconSun'), iconMoon = $('iconMoon');
+const dropzone = $('dropzone'), fileInput = $('fileInput');
+const filesCard = $('filesCard'), filesScroll = $('filesScroll'),
+      filesList = $('filesList'), filesSummary = $('filesSummary');
+const clearAllBtn = $('clearAllBtn');
+const modeField = $('modeField'), modeOne = $('modeOne'), modeParts = $('modeParts'),
+      modeHint = $('modeHint'), sizeField = $('sizeField');
+const sizeValue = $('sizeValue'), sizeUnit = $('sizeUnit'), sizeHint = $('sizeHint');
+const prefixInput = $('prefixInput'), sortChk = $('sortChk'), excludeChk = $('excludeChk');
+const mergeBtn = $('mergeBtn');
+const progressWrap = $('progressWrap'), progressBar = $('progressBar'),
+      progressFill = $('progressFill'), progressText = $('progressText'), cancelBtn = $('cancelBtn');
+const resultsCard = $('resultsCard'), resultsList = $('resultsList'),
+      resultsSummary = $('resultsSummary'), downloadAllBtn = $('downloadAllBtn'),
+      downloadZipBtn = $('downloadZipBtn'), shaManifestBtn = $('shaManifestBtn'),
+      zipInfo = $('zipInfo'), warningsBox = $('warningsBox'), emptyMsg = $('emptyMsg');
+const toastsBox = $('toastsBox');
+
+// ==================== УТИЛИТЫ ====================
+const ROW_H = 42, ROW_GAP = 6, SLOT = 48, OVERSCAN = 6; // геометрия виртуального списка
+
+const fmtSize = b => {
+  const u = LANG === 'ru' ? ['Б','КБ','МБ'] : ['B','KB','MB'];
+  return b >= 1048576 ? (b/1048576).toFixed(2)+' '+u[2]
+       : b >= 1024     ? (b/1024).toFixed(1)+' '+u[1]
+       : b+' '+u[0];
+};
+const unitBytes = u => u === 'mb' ? 1048576 : u === 'kb' ? 1024 : 1;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const maxBytes = () => Math.round(parseFloat(sizeValue.value) * unitBytes(sizeUnit.value));
+const currentPrefix = () => prefixInput.value.trim() || 'total';
+const currentMode = () => modeOne.checked ? 'one' : 'parts';
+const byName = (a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+const num = n => n.toLocaleString(LANG === 'ru' ? 'ru-RU' : 'en-US');
+const isFileOversized = f => currentMode() === 'parts' && maxBytes() > 0 && f.size > maxBytes();
+
+// ==================== ТОСТЫ ====================
+function toast(msg, type){
+  type = type || 'info';
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.innerHTML = '<span></span><button type="button" aria-label="' + esc(t('closeToast')) + '">✕</button>';
+  el.firstChild.textContent = msg;
+  toastsBox.appendChild(el);
+  while (toastsBox.children.length > 5) toastsBox.firstChild.remove();
+  let killed = false;
+  const kill = () => { if (killed) return; killed = true; el.classList.add('hide'); setTimeout(() => el.remove(), 300); };
+  el.querySelector('button').addEventListener('click', kill);
+  setTimeout(kill, 4600);
+}
+
+async function copyText(s){
+  try {
+    await navigator.clipboard.writeText(s);
+    toast(t('copied'), 'success');
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = s; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+      toast(t('copied'), 'success');
+    } catch (err) { toast(t('copyFail'), 'error'); }
+  }
+}
+
+// ==================== ЯЗЫК / ТЕМА ====================
+function applyI18n(){
+  document.documentElement.lang = LANG;
+  document.title = t('docTitle');
+  document.querySelector('meta[name="description"]').setAttribute('content', t('subtitle'));
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.setAttribute('title', t(el.dataset.i18nTitle)); });
+  langRu.setAttribute('aria-pressed', String(LANG === 'ru'));
+  langEn.setAttribute('aria-pressed', String(LANG === 'en'));
+}
+
+function setLang(lang){
+  LANG = lang;
+  store.set('stitcher-lang', lang);
+  applyI18n();
+  updateThemeBtn();
+  updateSizeHint();
+  updateModeUI();
+  renderFiles();
+  renderResults();
+}
+
+function currentTheme(){ return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'; }
+function updateThemeBtn(){
+  const light = currentTheme() === 'light';
+  iconSun.hidden = light;
+  iconMoon.hidden = !light;
+  const label = light ? t('themeToDark') : t('themeToLight');
+  themeBtn.setAttribute('aria-label', label);
+  themeBtn.setAttribute('title', label);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', light ? '#eef1f6' : '#0e1116');
+}
+function setTheme(theme){
+  document.documentElement.dataset.theme = theme;
+  store.set('stitcher-theme', theme);
+  updateThemeBtn();
+}
+
+// ==================== НАСТРОЙКИ: СОХРАНЕНИЕ / ВОССТАНОВЛЕНИЕ ====================
+function persistSettings(){
+  store.set('stitcher-size', sizeValue.value);
+  store.set('stitcher-unit', sizeUnit.value);
+  store.set('stitcher-prefix', prefixInput.value);
+  store.set('stitcher-sort', sortChk.checked ? '1' : '0');
+  store.set('stitcher-exclude', excludeChk.checked ? '1' : '0');
+}
+function restoreSettings(){
+  const s = store.get('stitcher-size');
+  if (s !== null && s !== '' && parseFloat(s) > 0) sizeValue.value = s;
+  const u = store.get('stitcher-unit');
+  if (['mb','kb','b'].includes(u)) sizeUnit.value = u;
+  const p = store.get('stitcher-prefix');
+  if (p !== null && p.trim() !== '') prefixInput.value = p;
+  const so = store.get('stitcher-sort');
+  if (so !== null) sortChk.checked = so === '1';
+  const ex = store.get('stitcher-exclude');
+  if (ex !== null) excludeChk.checked = ex === '1';
+  if (store.get('stitcher-mode') === 'one') modeOne.checked = true;
+}
+
+// ==================== WEB WORKER ====================
+// Весь тяжёлый код живёт здесь и выполняется в фоновом потоке.
+// Внутри — только ES-код без шаблонных строк, чтобы безопасно лежать в литерале.
+const WORKER_SRC = `
+'use strict';
+var CRC_TABLE = (function(){
+  var t = new Uint32Array(256);
+  for (var n = 0; n < 256; n++){
+    var c = n;
+    for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8){
+  var c = 0xFFFFFFFF;
+  for (var i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+var CAN_DEFLATE = false;
+try { CAN_DEFLATE = typeof CompressionStream !== 'undefined' && !!new CompressionStream('deflate-raw'); } catch (e) {}
+
+function post(kind, data, transfer){
+  var msg = data || {};
+  msg.type = kind;
+  postMessage(msg, transfer || []);
+}
+var lastProgress = 0;
+function progress(phase, done, total, label){
+  var now = Date.now();
+  if (done < total && now - lastProgress < 100) return;
+  lastProgress = now;
+  post('progress', { phase: phase, done: done, total: total, label: label || '' });
+}
+async function deflateRaw(u8){
+  var cs = new CompressionStream('deflate-raw');
+  var out = new Response(cs.readable).arrayBuffer();
+  var w = cs.writable.getWriter();
+  await w.write(u8);
+  await w.close();
+  return new Uint8Array(await out);
+}
+async function sha256(u8){
+  try {
+    var d = await crypto.subtle.digest('SHA-256', u8);
+    var h = new Uint8Array(d), s = '', i;
+    for (i = 0; i < h.length; i++) s += (h[i] < 16 ? '0' : '') + h[i].toString(16);
+    return s;
+  } catch (e) { return ''; }
+}
+async function mergeCmd(cmd){
+  var files = cmd.files, chunks = cmd.chunks, names = cmd.names;
+  var total = 0, i, j;
+  for (i = 0; i < files.length; i++) total += files[i].size;
+  var done = 0, out = [];
+  for (i = 0; i < chunks.length; i++){
+    var group = chunks[i], size = 0;
+    for (j = 0; j < group.length; j++) size += files[group[j]].size;
+    var buf = new Uint8Array(size), off = 0;
+    for (j = 0; j < group.length; j++){
+      var f = files[group[j]];
+      var data = new Uint8Array(await f.arrayBuffer());
+      if (data.length) buf.set(data, off);
+      off += data.length;
+      done += f.size;
+      progress('merge', done, total, names[i]);
+    }
+    var sha = await sha256(buf);
+    out.push({ name: names[i], buffer: buf.buffer, size: size, count: group.length, sha: sha });
+  }
+  var transfer = [];
+  for (i = 0; i < out.length; i++) transfer.push(out[i].buffer);
+  post('mergedone', { results: out }, transfer);
+}
+async function zipCmd(cmd){
+  var entries = cmd.entries;
+  var enc = new TextEncoder();
+  var now = new Date();
+  var dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+  var dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+  var local = [], central = [], offset = 0, total = 0, i;
+  for (i = 0; i < entries.length; i++) total += entries[i].size;
+  var done = 0;
+  for (i = 0; i < entries.length; i++){
+    var e = entries[i];
+    progress('zip', done, total, e.name);
+    var u8 = new Uint8Array(e.buffer);
+    var name = enc.encode(e.name);
+    var crc = crc32(u8);
+    var method = 0, data = u8, compSize = e.size;
+    if (CAN_DEFLATE && e.size > 128){
+      try {
+        var def = await deflateRaw(u8);
+        if (def.byteLength < e.size){ method = 8; data = def; compSize = def.byteLength; }
+      } catch (err) {}
+    }
+    var lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true);
+    lh.setUint16(4, 20, true);
+    lh.setUint16(6, 0x0800, true);
+    lh.setUint16(8, method, true);
+    lh.setUint16(10, dosTime, true);
+    lh.setUint16(12, dosDate, true);
+    lh.setUint32(14, crc, true);
+    lh.setUint32(18, compSize, true);
+    lh.setUint32(22, e.size, true);
+    lh.setUint16(26, name.length, true);
+    local.push(lh.buffer, name, data);
+    var ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true);
+    ch.setUint16(4, 20, true);
+    ch.setUint16(6, 20, true);
+    ch.setUint16(8, 0x0800, true);
+    ch.setUint16(10, method, true);
+    ch.setUint16(12, dosTime, true);
+    ch.setUint16(14, dosDate, true);
+    ch.setUint32(16, crc, true);
+    ch.setUint32(20, compSize, true);
+    ch.setUint32(24, e.size, true);
+    ch.setUint16(28, name.length, true);
+    ch.setUint32(42, offset, true);
+    central.push(ch.buffer, name);
+    offset += 30 + name.length + compSize;
+    done += e.size;
+    progress('zip', done, total, e.name);
+  }
+  var centralSize = 0;
+  for (i = 0; i < central.length; i++) centralSize += central[i].byteLength;
+  var eocd = new DataView(new ArrayBuffer(22));
+  eocd.setUint32(0, 0x06054b50, true);
+  eocd.setUint16(8, entries.length, true);
+  eocd.setUint16(10, entries.length, true);
+  eocd.setUint32(12, centralSize, true);
+  eocd.setUint32(16, offset, true);
+  var zipBuffer = await new Blob(local.concat(central, [eocd.buffer])).arrayBuffer();
+  var back = [];
+  for (i = 0; i < entries.length; i++) back.push(entries[i].buffer);
+  post('zipdone', { buffer: zipBuffer, uncompressed: total, back: back }, [zipBuffer].concat(back));
+}
+self.onmessage = async function(ev){
+  var cmd = ev.data || {};
+  try {
+    if (cmd.cmd === 'merge') await mergeCmd(cmd);
+    else if (cmd.cmd === 'zip') await zipCmd(cmd);
+  } catch (err) {
+    post('error', { message: String((err && err.message) || err) });
+  }
+};
+`;
+
+function makeMainThreadWorker(){
+  // Фолбэк, если Worker создать не удалось (некоторые окружения file://):
+  // тот же код исполняется в главном потоке через шину сообщений.
+  const fakeSelf = { onmessage: null };
+  const api = {
+    onmessage: null,
+    postMessage(msg){ setTimeout(() => { if (fakeSelf.onmessage) fakeSelf.onmessage({ data: msg }); }, 0); },
+    terminate(){ fakeSelf.onmessage = null; }
+  };
+  const fakePost = msg => { setTimeout(() => { if (api.onmessage) api.onmessage({ data: msg }); }, 0); };
+  new Function('self', 'postMessage', WORKER_SRC)(fakeSelf, fakePost);
+  return api;
+}
+
+function getWorker(){
+  if (worker) return worker;
+  try {
+    if (workerUrl) URL.revokeObjectURL(workerUrl);
+    workerUrl = URL.createObjectURL(new Blob([WORKER_SRC], { type: 'text/javascript' }));
+    worker = new Worker(workerUrl);
+  } catch (err) {
+    worker = makeMainThreadWorker();
+  }
+  worker.onmessage = ev => handleWorkerMsg(ev.data);
+  worker.onerror = () => {
+    toast(t('workerError') + 'Worker', 'error');
+    abortToIdle(true);
+  };
+  return worker;
+}
+
+function handleWorkerMsg(msg){
+  if (!msg || !msg.type) return;
+  if (msg.type === 'progress'){
+    showProgress(msg.phase, msg.done, msg.total, msg.label);
+  } else if (msg.type === 'mergedone'){
+    results = msg.results.map(r => ({
+      name: r.name, buffer: r.buffer, size: r.size, count: r.count, sha: r.sha,
+      oversized: runMode === 'parts' && r.size > runMax
+    }));
+    abortToIdle(false);
+    toast(t('doneToast'), 'success');
+  } else if (msg.type === 'zipdone'){
+    // части были переданы в воркер — возвращаем их буферы на место
+    (msg.back || []).forEach((b, i) => { if (results[i]) results[i].buffer = b; });
+    const blob = new Blob([msg.buffer], { type: 'application/zip' });
+    const name = currentPrefix() + '.zip';
+    triggerDownload(blob, name);
+    zipInfo.hidden = false;
+    zipInfo.textContent = t('zipLine', { name, size: fmtSize(blob.size) }) + ' ' +
+      (blob.size < msg.uncompressed
+        ? t('zipSaved', { size: fmtSize(msg.uncompressed), pct: Math.round((1 - blob.size / msg.uncompressed) * 100) })
+        : t('zipStored'));
+    abortToIdle(false);
+  } else if (msg.type === 'error'){
+    toast(t('workerError') + (msg.message || ''), 'error');
+    abortToIdle(true); // буферы могли остаться переданными в воркер — результаты недостоверны
+  }
+}
+
+function showProgress(phase, done, total, label){
+  const pct = total > 0 ? Math.min(100, Math.floor(done / total * 100)) : 0;
+  progressFill.style.width = pct + '%';
+  progressBar.setAttribute('aria-valuenow', String(pct));
+  progressText.textContent = t('progressText', {
+    phase: t(phase === 'zip' ? 'phaseZip' : 'phaseMerge'),
+    pct,
+    done: fmtSize(done),
+    total: fmtSize(total)
+  }) + (label ? ' · ' + label : '');
+}
+
+function abortToIdle(clear){
+  busy = false;
+  modeField.disabled = false;
+  progressWrap.hidden = true;
+  updateMergeBtn();
+  if (clear) clearResults();
+  renderResults();
+}
+
+function cancelRun(){
+  if (!busy) return;
+  if (worker){ worker.terminate(); worker = null; }
+  abortToIdle(true); // частичные результаты недействительны
+  toast(t('cancelled'), 'info');
+}
+
+// ==================== РЕЖИМ СШИВАНИЯ ====================
+function updateModeUI(){
+  const one = currentMode() === 'one';
+  sizeField.hidden = one;
+  modeHint.textContent = one ? t('modeOneHint') : t('modePartsHint');
+}
+function onModeChange(){
+  store.set('stitcher-mode', currentMode());
+  updateModeUI();
+  clearResults();
+  renderFiles();
+}
+
+// ==================== ФАЙЛЫ ====================
+function addFiles(list){
+  const prefix = currentPrefix();
+  let added = 0;
+  for (const f of list){
+    const n = f.name.toLowerCase();
+    if (!n.endsWith('.html') && !n.endsWith('.htm')) continue;
+    if (excludeChk.checked && f.name.startsWith(prefix)) continue;
+    if (selectedFiles.some(x => x.name === f.name && x.size === f.size)) continue;
+    selectedFiles.push(f);
+    added++;
+  }
+  if (added){ clearResults(); renderFiles(); }
+}
+
+function removeFile(i){ selectedFiles.splice(i, 1); clearResults(); renderFiles(); }
+
+function updateMergeBtn(){ mergeBtn.disabled = busy || selectedFiles.length === 0; }
+
+function renderFiles(){
+  filesCard.hidden = selectedFiles.length === 0;
+  updateMergeBtn();
+  emptyMsg.hidden = selectedFiles.length !== 0;
+  renderWindow();
+
+  const total = selectedFiles.reduce((s, f) => s + f.size, 0);
+  const parts = previewChunkCount();
+  const max = maxBytes();
+  const over = currentMode() === 'parts' && max > 0
+    ? selectedFiles.filter(f => f.size > max).length : 0;
+  filesSummary.innerHTML =
+    esc(parts ? t('filesSummaryParts', { n: selectedFiles.length, size: fmtSize(total), p: parts })
+              : t('filesSummary', { n: selectedFiles.length, size: fmtSize(total) })) +
+    (over ? ' <span class="warn-text">' + esc(t('filesTooBig', { n: over })) + '</span>' : '');
+}
+
+// ---------- виртуализация: рисуем только видимые строки ----------
+function renderWindow(){
+  const n = selectedFiles.length;
+  filesList.style.height = n ? Math.max(1, n * SLOT - ROW_GAP) + 'px' : '0px';
+  filesList.innerHTML = '';
+  if (!n) return;
+  const st = filesScroll.scrollTop, vh = filesScroll.clientHeight;
+  const first = Math.max(0, Math.floor(st / SLOT) - OVERSCAN);
+  const last = Math.min(n, Math.ceil((st + vh) / SLOT) + OVERSCAN);
+  for (let i = first; i < last; i++) filesList.appendChild(buildFileRow(selectedFiles[i], i));
+}
+
+function buildFileRow(f, i){
+  const over = isFileOversized(f);
+  const row = document.createElement('div');
+  row.className = 'file-row' + (over ? ' oversized' : '');
+  row.style.top = (i * SLOT) + 'px';
+  row.setAttribute('role', 'listitem');
+  row.setAttribute('aria-label', esc(f.name) + ', ' + fmtSize(f.size) + (over ? '. ' + t('fileTooBig') : ''));
+  row.draggable = true;
+  row.dataset.i = i;
+  row.title = over ? t('fileTooBig') : '';
+  row.innerHTML = `
+    <span class="num" aria-hidden="true">${i+1}</span>
+    <span class="name" title="${esc(f.name)}">${esc(f.name)}</span>
+    ${over ? '<span class="warn-ico" aria-hidden="true">⚠</span>' : ''}
+    <span class="size">${fmtSize(f.size)}</span>
+    <span class="row-btns">
+      <button type="button" class="icon-btn" data-act="up" aria-label="${esc(t('moveUp'))}" title="${esc(t('moveUp'))}" ${i === 0 ? 'disabled' : ''}>↑</button>
+      <button type="button" class="icon-btn" data-act="down" aria-label="${esc(t('moveDown'))}" title="${esc(t('moveDown'))}" ${i === selectedFiles.length - 1 ? 'disabled' : ''}>↓</button>
+      <button type="button" class="icon-btn" data-act="del" aria-label="${esc(t('removeFile'))}: ${esc(f.name)}" title="${esc(t('removeFile'))}">✕</button>
+    </span>`;
+
+  row.addEventListener('dragstart', e => {
+    dragFrom = i;
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', f.name); } catch (_) {}
+  });
+  row.addEventListener('dragover', e => {
+    if (dragFrom === null) return; // внешний перенос файла — не подсвечиваем
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    filesList.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+    row.classList.add('drop-target');
+  });
+  row.addEventListener('drop', e => {
+    if (dragFrom === null) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const from = dragFrom;
+    clearDragState();
+    manualReorder(from, i);
+  });
+  return row;
+}
+
+function clearDragState(){
+  dragFrom = null;
+  filesList.querySelectorAll('.dragging,.drop-target').forEach(el => el.classList.remove('dragging', 'drop-target'));
+}
+
+function manualReorder(from, to){
+  if (from === to || from < 0 || to < 0 || from >= selectedFiles.length || to >= selectedFiles.length) return;
+  if (sortChk.checked){
+    sortChk.checked = false;
+    persistSettings();
+    toast(t('sortOffByDrag'), 'info');
+  }
+  const [item] = selectedFiles.splice(from, 1);
+  selectedFiles.splice(to, 0, item);
+  clearResults();
+  renderFiles();
+}
+
+// ==================== РАЗБИЕНИЕ И СШИВАНИЕ ====================
+function computeChunks(files, mode, max){
+  if (mode === 'one'){
+    return [{ files: files.slice(), size: files.reduce((s, f) => s + f.size, 0) }];
+  }
+  const chunks = [];
+  let cur = [], curSize = 0;
+  for (const f of files){
+    if (cur.length && curSize + f.size > max){
+      chunks.push({ files: cur, size: curSize });
+      cur = []; curSize = 0;
+    }
+    cur.push(f);
+    curSize += f.size;
+  }
+  if (cur.length) chunks.push({ files: cur, size: curSize });
+  return chunks;
+}
+
+function previewChunkCount(){
+  if (!selectedFiles.length) return 0;
+  if (currentMode() === 'one') return 1;
+  const max = maxBytes();
+  if (!(max > 0)) return 0;
+  const files = sortChk.checked ? [...selectedFiles].sort(byName) : selectedFiles;
+  return computeChunks(files, 'parts', max).length;
+}
+
+// нумерация с ведущими нулями, если частей 10 и больше
+function outputName(prefix, idx, count, mode){
+  if (mode === 'one') return prefix + '.html';
+  const width = count >= 10 ? String(count).length : 1;
+  return prefix + '_' + String(idx).padStart(width, '0') + '.html';
+}
+
+function clearResults(){
+  results = [];
+  resultsCard.hidden = true;
+  warningsBox.innerHTML = '';
+  zipInfo.hidden = true;
+}
+
+function updateSizeHint(){
+  const b = maxBytes();
+  sizeHint.textContent = b > 0 ? t('bytesHint', { n: num(b) }) : t('invalidSize');
+}
+
+function merge(){
+  if (busy) return;
+  const mode = currentMode();
+  const max = maxBytes();
+  if (mode === 'parts' && !(max > 0)){ toast(t('invalidSizeAlert'), 'error'); return; }
+  if (!selectedFiles.length) return;
+
+  const prefix = currentPrefix();
+  runMode = mode;
+  runMax = max;
+  busy = true;
+  updateMergeBtn();
+  clearResults();
+  renderResults();
+  modeField.disabled = true;
+  progressWrap.hidden = false;
+  showProgress('merge', 0, 0, '');
+
+  const files = sortChk.checked ? [...selectedFiles].sort(byName) : [...selectedFiles];
+  const chunks = computeChunks(files, mode, max);
+  const names = chunks.map((c, i) => outputName(prefix, i + 1, chunks.length, mode));
+  const idxMap = new Map(files.map((f, i) => [f, i]));
+  const idxChunks = chunks.map(c => c.files.map(f => idxMap.get(f)));
+
+  getWorker().postMessage({ cmd: 'merge', files: files, chunks: idxChunks, names: names });
+}
+
+// ==================== РЕЗУЛЬТАТЫ ====================
+function renderResults(){
+  if (!results.length){ resultsCard.hidden = true; return; }
+  resultsCard.hidden = false;
+  downloadAllBtn.disabled = busy;
+  downloadZipBtn.disabled = busy;
+  shaManifestBtn.disabled = busy;
+
+  resultsList.innerHTML = '';
+  results.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'result-row' + (r.oversized ? ' oversized' : '');
+    row.setAttribute('role', 'listitem');
+    row.dataset.i = i;
+    const shaChip = r.sha
+      ? `<button type="button" class="sha-chip" data-act="sha" title="${r.sha}" aria-label="${esc(t('copySha', { name: r.name }))}">${r.sha.slice(0, 8)}…</button>`
+      : '';
+    row.innerHTML = `
+      <span class="name" title="${esc(r.name)}">${esc(r.name)}</span>
+      <span class="meta">${t('rowMeta', { size: fmtSize(r.size), count: r.count })}</span>
+      ${shaChip}
+      <button type="button" class="btn btn-ghost btn-sm" data-act="preview" aria-label="${esc(t('previewAria', { name: r.name }))}" ${busy ? 'disabled' : ''}>${t('previewBtn')}</button>
+      <button type="button" class="btn btn-ghost btn-sm" data-act="download" aria-label="${esc(t('downloadBtn'))}: ${esc(r.name)}" ${busy ? 'disabled' : ''}>⬇ ${t('downloadBtn')}</button>`;
+    resultsList.appendChild(row);
+  });
+
+  const totalSize = results.reduce((s, r) => s + r.size, 0);
+  const totalFiles = results.reduce((s, r) => s + r.count, 0);
+  resultsSummary.textContent = t('resultsSummary', { n: results.length, m: totalFiles, size: fmtSize(totalSize) });
+
+  const over = results.filter(r => r.oversized);
+  warningsBox.innerHTML = over.length
+    ? `<div class="warn-box" role="alert">${esc(t('warnOversized', { n: over.length, total: results.length }))}</div>`
+    : '';
+}
+
+// ==================== ZIP ====================
+function downloadZip(){
+  if (!results.length || busy) return;
+  const uncompressed = results.reduce((s, r) => s + r.size, 0);
+  if (uncompressed + results.length * 200 > 0xFFFFFFFF || results.length > 65535){
+    toast(t('tooBigZip'), 'error');
+    return;
+  }
+  busy = true;
+  updateMergeBtn();
+  renderResults(); // отключаем кнопки частей: их буферы уезжают в воркер
+  progressWrap.hidden = false;
+  showProgress('zip', 0, 0, '');
+  const entries = results.map(r => ({ name: r.name, buffer: r.buffer, size: r.size }));
+  getWorker().postMessage({ cmd: 'zip', entries: entries }, entries.map(e => e.buffer));
+}
+
+// ==================== СКАЧИВАНИЕ / ПРОСМОТР / СУММЫ ====================
+function triggerDownload(blob, name){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function downloadResult(r){
+  triggerDownload(new Blob([r.buffer], { type: 'text/html' }), r.name);
+}
+
+async function downloadAll(){
+  for (const r of results){
+    downloadResult(r);
+    await new Promise(res => setTimeout(res, 500));
+  }
+}
+
+function previewResult(r){
+  const url = URL.createObjectURL(new Blob([r.buffer], { type: 'text/html' }));
+  previewUrls.push(url);
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    previewUrls = previewUrls.filter(u => u !== url);
+  }, 10 * 60 * 1000);
+  const w = window.open(url, '_blank');
+  if (!w) toast(t('popupBlocked'), 'warn');
+}
+
+function downloadManifest(){
+  if (!results.length || busy) return;
+  if (results.some(r => !r.sha)){ toast(t('shaUnavailable'), 'warn'); return; }
+  // формат sha256sum: ХЭШ␠␠имя — проверяется командой sha256sum -c total.sha256
+  const text = results.map(r => r.sha + '  ' + r.name).join('\n') + '\n';
+  triggerDownload(new Blob([text], { type: 'text/plain;charset=utf-8' }), currentPrefix() + '.sha256');
+}
+
+// ==================== СОБЫТИЯ ====================
+langRu.addEventListener('click', () => setLang('ru'));
+langEn.addEventListener('click', () => setLang('en'));
+themeBtn.addEventListener('click', () => setTheme(currentTheme() === 'light' ? 'dark' : 'light'));
+modeOne.addEventListener('change', onModeChange);
+modeParts.addEventListener('change', onModeChange);
+cancelBtn.addEventListener('click', cancelRun);
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fileInput.click(); }
+});
+fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
+
+let dragDepth = 0;
+dropzone.addEventListener('dragover', e => e.preventDefault());
+dropzone.addEventListener('dragenter', e => {
+  if (dragFrom !== null) return; // перетаскиваем строку, а не файл
+  e.preventDefault(); dragDepth++; dropzone.classList.add('drag');
+});
+dropzone.addEventListener('dragleave', () => { if (--dragDepth <= 0){ dragDepth = 0; dropzone.classList.remove('drag'); } });
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dragDepth = 0;
+  dropzone.classList.remove('drag');
+  if (dragFrom !== null){ clearDragState(); return; }
+  addFiles(e.dataTransfer.files);
+});
+
+// страница целиком — допустимая зона дропа: файл, брошенный мимо дропзоны,
+// добавляется в список, а не открывается браузером вместо страницы
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  if (dragFrom !== null){ clearDragState(); return; }
+  if (e.target.closest && e.target.closest('#dropzone')) return; // уже обработано дропзоной
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+});
+document.addEventListener('dragend', clearDragState);
+
+// клики по виртуальному списку файлов
+filesList.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-act]');
+  if (!btn || btn.disabled) return;
+  const i = +btn.closest('.file-row').dataset.i;
+  if (btn.dataset.act === 'del') removeFile(i);
+  else if (btn.dataset.act === 'up') manualReorder(i, i - 1);
+  else if (btn.dataset.act === 'down') manualReorder(i, i + 1);
+});
+
+// дроп под последней строкой — в конец списка
+filesList.addEventListener('dragover', e => { if (dragFrom !== null) e.preventDefault(); });
+filesList.addEventListener('dragend', clearDragState);
+filesList.addEventListener('drop', e => {
+  if (dragFrom === null) return;
+  e.preventDefault();
+  const from = dragFrom;
+  clearDragState();
+  manualReorder(from, selectedFiles.length - 1);
+});
+
+// клики по результатам
+resultsList.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-act]');
+  if (!btn || btn.disabled) return;
+  const i = +btn.closest('.result-row').dataset.i;
+  const r = results[i];
+  if (!r) return;
+  if (btn.dataset.act === 'download') downloadResult(r);
+  else if (btn.dataset.act === 'preview') previewResult(r);
+  else if (btn.dataset.act === 'sha') copyText(r.sha);
+});
+
+// перерисовка виртуального списка при прокрутке/изменении размеров
+let scrollRaf = false;
+filesScroll.addEventListener('scroll', () => {
+  if (scrollRaf) return;
+  scrollRaf = true;
+  requestAnimationFrame(() => { scrollRaf = false; renderWindow(); });
+});
+window.addEventListener('resize', renderWindow);
+
+clearAllBtn.addEventListener('click', () => { selectedFiles = []; clearResults(); renderFiles(); });
+mergeBtn.addEventListener('click', merge);
+downloadAllBtn.addEventListener('click', downloadAll);
+downloadZipBtn.addEventListener('click', downloadZip);
+shaManifestBtn.addEventListener('click', downloadManifest);
+
+['input', 'change'].forEach(evt => {
+  sizeValue.addEventListener(evt, () => { updateSizeHint(); persistSettings(); clearResults(); renderFiles(); });
+  sizeUnit.addEventListener(evt, () => { updateSizeHint(); persistSettings(); clearResults(); renderFiles(); });
+  prefixInput.addEventListener(evt, () => { persistSettings(); clearResults(); renderFiles(); });
+  sortChk.addEventListener(evt, () => { persistSettings(); clearResults(); renderFiles(); });
+});
+excludeChk.addEventListener('change', () => { persistSettings(); clearResults(); renderFiles(); });
+
+// ==================== СТАРТ ====================
+restoreSettings();
+setLang(LANG);
+})();
+</script>
+</body>
+</html>
