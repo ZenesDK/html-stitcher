@@ -4,7 +4,7 @@ English | **[Русский](./README.md)**
 
 Merges HTML files into a single file or size-limited parts — right in your browser, nothing is uploaded.
 
-**[Open the app →](https://ваш-домен/)**
+**[Open the app →](https://zenesdk.github.io/html-stitcher/)**
 
 ![App screenshot](screenshot.png)
 
